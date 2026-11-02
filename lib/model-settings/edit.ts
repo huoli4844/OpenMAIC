@@ -459,17 +459,24 @@ export function providerLabel(
   providerId: string,
   t?: (key: string) => string,
 ): string {
-  const provider = view.providers.find((entry) => entry.id === providerId);
-  if (provider && provider.preset === providerId && t) {
-    const metadata = view.webFetchProviders?.find(
-      (entry) => entry.id === provider.capabilities.webFetch?.registryId,
-    );
-    if (metadata?.nameKey) {
-      const name = t(metadata.nameKey);
-      if (name !== metadata.nameKey) return name;
+  const label = (id: string) => {
+    const provider = view.providers.find((entry) => entry.id === id);
+    if (provider && provider.preset === id && t) {
+      const metadata = view.webFetchProviders?.find(
+        (entry) => entry.id === provider.capabilities.webFetch?.registryId,
+      );
+      if (metadata?.nameKey) {
+        const name = t(metadata.nameKey);
+        if (name !== metadata.nameKey) return name;
+      }
     }
-  }
-  return provider && provider.preset === providerId ? provider.presetName : providerId;
+    return provider && provider.preset === id ? provider.presetName : id;
+  };
+  const name = label(providerId);
+  const ambiguous = view.providers.some(
+    (provider) => provider.id !== providerId && label(provider.id) === name,
+  );
+  return ambiguous ? `${name} · ${providerId}` : name;
 }
 
 /** A client's apply: the change, and the view it was worked out from. */

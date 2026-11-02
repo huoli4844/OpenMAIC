@@ -195,6 +195,36 @@ describe('modelSettingsView', () => {
     expect(slot('agent.title')).toMatchObject({ configOnly: true });
   });
 
+  it('hides a shadowed workspace provider so it cannot masquerade as the deployment choice', () => {
+    deployment({
+      providers: {
+        deepseek: { preset: 'deepseek', models: ['deepseek-flash'] },
+      },
+    });
+    const view = modelSettingsView({
+      config: {
+        providers: {
+          deepseek: { preset: 'deepseek', apiKey: 'sk-workspace-key-0001' },
+          'deepseek-token-plan': { preset: 'deepseek-token-plan', apiKey: 'sk-plan-key-0001' },
+        },
+        slots: { llm: 'deepseek:deepseek-flash' },
+      },
+      revision: 1,
+      unreadableSecrets: [],
+    });
+
+    expect(view.providers.map((provider) => provider.id)).toEqual([
+      'deepseek',
+      'deepseek-token-plan',
+      'builtin',
+    ]);
+    expect(view.slots.find((slot) => slot.slot === 'llm')?.effective).toMatchObject({
+      status: 'assigned',
+      providerId: 'deepseek',
+      providerSource: 'deployment',
+    });
+  });
+
   it('leaves dormant workspace providers and their assignments out without user keys', () => {
     deployment({
       providers: {

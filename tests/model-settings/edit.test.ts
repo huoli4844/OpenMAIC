@@ -187,6 +187,32 @@ describe('providers', () => {
     expect(providerLabel(view, 'work')).toBe('work');
   });
 
+  it('distinguishes providers that share a displayed name', () => {
+    const view = makeView({
+      providers: [
+        {
+          id: 'deepseek',
+          preset: 'deepseek',
+          presetName: 'DeepSeek',
+          presetKind: 'single',
+          source: 'deployment',
+          capabilities: { chat: { models: [] } },
+        },
+        {
+          id: 'deepseek-token-plan',
+          preset: 'deepseek-token-plan',
+          presetName: 'DeepSeek',
+          presetKind: 'token-plan',
+          source: 'workspace',
+          capabilities: { chat: { models: [] } },
+          key: { set: true, mask: '…abcd' },
+        },
+      ],
+    });
+    expect(providerLabel(view, 'deepseek')).toBe('DeepSeek · deepseek');
+    expect(providerLabel(view, 'deepseek-token-plan')).toBe('DeepSeek · deepseek-token-plan');
+  });
+
   it('asks for a base URL and models only where the preset needs them', () => {
     expect(providerFields(chatPreset, emptyDraft('acme'))).toEqual({
       baseUrl: true,

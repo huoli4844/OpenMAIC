@@ -499,26 +499,32 @@ export function modelSettingsView(stored: StoredWorkspaceConfig | null): ModelSe
         providerId: id,
       }),
     })),
-    ...Object.entries(workspaceProviders).map(([id, provider]) => ({
-      id,
-      preset: provider.preset,
-      ...presetLabel(provider.preset),
-      source: 'workspace' as const,
-      ...(provider.baseUrl ? { baseUrl: viewEndpoint(provider.baseUrl) } : {}),
-      ...(provider.models ? { models: [...provider.models] } : {}),
-      ...(provider.options ? { options: { ...provider.options } } : {}),
-      ...(provider.voices ? { voices: provider.voices.map((voice) => ({ ...voice })) } : {}),
-      capabilities: capabilityModels(getProviderPreset(provider.preset), provider.models, {
-        // An official regional endpoint is the service's own, not a custom one.
-        chatOnly: provider.baseUrl !== undefined && !officialEndpointOf(provider),
-        baseUrl: provider.baseUrl,
-      }),
-      key: {
-        set: Boolean(provider.apiKey) || unreadable.has(id),
-        ...(provider.apiKey ? { mask: maskKey(provider.apiKey) } : {}),
-        ...(unreadable.has(id) ? { unreadable: true } : {}),
-      },
-    })),
+    // A deployment provider always wins when both layers declare the same id.
+    // Keep the stale workspace secret out of the picker: offering it under the
+    // same id makes two visually identical, apparently selected choices even
+    // though both references resolve to the deployment provider.
+    ...Object.entries(workspaceProviders)
+      .filter(([id]) => !Object.hasOwn(deploymentProviders, id))
+      .map(([id, provider]) => ({
+        id,
+        preset: provider.preset,
+        ...presetLabel(provider.preset),
+        source: 'workspace' as const,
+        ...(provider.baseUrl ? { baseUrl: viewEndpoint(provider.baseUrl) } : {}),
+        ...(provider.models ? { models: [...provider.models] } : {}),
+        ...(provider.options ? { options: { ...provider.options } } : {}),
+        ...(provider.voices ? { voices: provider.voices.map((voice) => ({ ...voice })) } : {}),
+        capabilities: capabilityModels(getProviderPreset(provider.preset), provider.models, {
+          // An official regional endpoint is the service's own, not a custom one.
+          chatOnly: provider.baseUrl !== undefined && !officialEndpointOf(provider),
+          baseUrl: provider.baseUrl,
+        }),
+        key: {
+          set: Boolean(provider.apiKey) || unreadable.has(id),
+          ...(provider.apiKey ? { mask: maskKey(provider.apiKey) } : {}),
+          ...(unreadable.has(id) ? { unreadable: true } : {}),
+        },
+      })),
     {
       id: implicitId,
       preset: DEFAULT_WEB_FETCH_PROVIDER.id,
